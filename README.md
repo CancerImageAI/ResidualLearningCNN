@@ -5,4 +5,5 @@
     </br>
     Our research investigated and developed a new <b>deep learning</b> scheme to classify between IA and non-IA by using <b>residual learning architecture</b>. The flowchart of our scheme is illustrated in Figure 1.
     </br>
-i[image](https://github.com/GongJingUSST/ResidualLearningCNN/raw/master/Images/WorkFlow.jpg)
+![image](https://raw.githubusercontent.com/GongJingUSST/ResidualLearningCNN/master/Images/WorkFlow.jpg)
+https://github.com/GongJingUSST/ResidualLearningCNN/raw/master/Images/WorkFlow.jpg
