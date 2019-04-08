@@ -1,0 +1,222 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Feb 20 10:46:12 2019
+
+@author: Jing Gong
+@e-mail: gongjing1990@163.com
+@Fudan University Shanghai Cancer Center
+"""
+import tensorflow as tf
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.metrics import accuracy_score,roc_curve,roc_auc_score,auc,confusion_matrix,cohen_kappa_score
+import imageio
+
+
+if __name__ == '__main__':
+    ListPath = r'.\GGO_DataSet\test_data\TestList_Info.csv'
+    model_path = r'.\GGO_DataSet\IAC_VS_pre\model\model.ckpt-3000'
+    ListFile = open(ListPath)
+    List = pd.read_csv(ListFile)
+    List_Num = List['Num'].tolist()
+    Class = List['Class'].tolist()
+    Histopathology = List['Histopathology'].tolist()
+    tf.reset_default_graph()
+    with tf.Session() as sess:
+        init = tf.global_variables_initializer()
+        sess.run(init)
+        saver = tf.train.import_meta_graph(model_path+'.meta')
+        saver.restore(sess,model_path)
+        graph = tf.get_default_graph()
+        y_prob = graph.get_tensor_by_name('fc2/y_prob:0')
+        x_image = graph.get_tensor_by_name('x_image:0')
+        is_training = graph.get_tensor_by_name('is_training:0')
+        input_image = tf.placeholder(tf.float32,[64,64,3])
+        input_image1 = tf.image.per_image_standardization(input_image)
+        image = tf.reshape(input_image1,[1,64,64,3])
+         
+        pred_class = tf.argmax(y_prob, 1)
+
+        test_result = []
+        pred_label = []
+        real_class = []
+        pred_prob = []
+        for i in range(len(List_Num)):
+            if Class[i] == 1 and Histopathology[i] == 'IAC':
+                roi_rgb = imageio.imread('./GGO_DataSet/test_data/test_Img/'+List_Num[i]+'.jpg')
+        #        test_image = roi_rgb.transpose(2,1,0)
+                image1 = sess.run(image, feed_dict={input_image:roi_rgb})
+                prob_r,pred_class_r = sess.run([y_prob,pred_class], feed_dict={x_image:image1,is_training:False})
+                
+    #            plt.imshow(test_image)
+    #            plt.show()
+                print('real_class:',1)
+                print('predict_class:',pred_class_r)
+                print('predict prability:',prob_r[0][1])
+                pred_label.append(pred_class_r)
+                real_class.append(1)
+                pred_prob.append(prob_r[0][1])
+                test = {}
+                test['Num'] = List_Num[i]
+                test['Class'] = 1
+                test['Prob'] = prob_r[0][1]
+                test['Histopathology'] = Histopathology[i]
+                test_result.append(test)
+            elif Class[i] == 1 and Histopathology[i] != 'IAC':
+                roi_rgb = imageio.imread('./GGO_DataSet/test_data/test_Img/'+List_Num[i]+'.jpg')
+        #        test_image = roi_rgb.transpose(2,1,0)   
+                image1 = sess.run(image, feed_dict={input_image:roi_rgb})            
+                prob_r,pred_class_r = sess.run([y_prob,pred_class], feed_dict={x_image:image1,is_training:False})
+                
+    #            plt.imshow(test_image)
+    #            plt.show()
+                print('real_class:',0)
+                print('predict_class:',pred_class_r)
+                print('predict prability:',prob_r[0][1])
+                pred_label.append(pred_class_r)
+                real_class.append(0)
+                pred_prob.append(prob_r[0][1])
+                test = {}
+                test['Num'] = List_Num[i]
+                test['Class'] = 0
+                test['Prob'] = prob_r[0][1]
+                test['Histopathology'] = Histopathology[i]
+                test_result.append(test)
+                
+    print('Our Model:',accuracy_score(real_class,pred_label))      
+    df = pd.DataFrame(test_result).fillna('null')
+    df.to_csv('./test_result.csv',index=False,sep=',')
+    fpr,tpr,threshold = roc_curve(np.array(real_class),pred_prob)
+    auc = auc(fpr,tpr)
+    print(auc)
+    TN, FP, FN, TP = confusion_matrix(real_class,pred_label).ravel()
+    # Sensitivity, hit rate, recall, or true positive rate
+    TPR = TP/(TP+FN)
+    print('Sensitivity:%0.4f'%TPR)
+    # Specificity or true negative rate
+    TNR = TN/(TN+FP) 
+    print('Specificity:%0.4f'%TNR)
+    # Precision or positive predictive value
+    PPV = TP/(TP+FP)
+    print('PPV:%0.4f'%PPV)
+    # Negative predictive value
+    NPV = TN/(TN+FN)
+    print('NPV:%0.4f'%NPV)
+    # Fall out or false positive rate
+    FPR = FP/(FP+TN)
+    print('FPR:%0.4f'%FPR)
+    # False negative rate
+    FNR = FN/(TP+FN)
+    print('FNR:%0.3f'%FNR)
+    # False discovery rate
+    FDR = FP/(TP+FP) 
+    print('FDR:%0.4f'%FDR)
+    # Overall accuracy
+    ACC = (TP+TN)/(TP+FP+FN+TN)
+    print('ACC:%0.4f'%ACC)
+    
+    radiology1_path = r'D:\LungCancer\GGO_DataSet\test_data\radiology_HW.csv'
+    radiology1 = open(radiology1_path)
+    radiology1_List = pd.read_csv(radiology1)
+    radiology1_result = radiology1_List['Diagnosis'].tolist()
+    print('HW:',accuracy_score(real_class,radiology1_result))
+    fpr1,tpr1,threshold1 = roc_curve(np.array(real_class),radiology1_result)
+#    auc1 = auc(fpr1,tpr1)
+#    print(auc1)
+    TN1, FP1, FN1, TP1 = confusion_matrix(real_class,radiology1_result).ravel()
+    # Sensitivity, hit rate, recall, or true positive rate
+    TPR1 = TP1/(TP1+FN1)
+    print('Sensitivity:%0.4f'%TPR1)
+    # Specificity or true negative rate
+    TNR1 = TN1/(TN1+FP1) 
+    print('Specificity:%0.4f'%TNR1)
+    # Precision or positive predictive value
+    PPV1 = TP1/(TP1+FP1)
+    print('PPV:%0.4f'%PPV1)
+    # Negative predictive value
+    NPV1 = TN1/(TN1+FN1)
+    print('NPV:%0.4f'%NPV1)
+    # Fall out or false positive rate
+    FPR1 = FP1/(FP1+TN1)
+    print('FPR:%0.4f'%FPR1)
+    # False negative rate
+    FNR1 = FN1/(TP1+FN1)
+    print('FNR:%0.4f'%FNR1)
+    # False discovery rate
+    FDR1 = FP1/(TP1+FP1) 
+    print('FDR:%0.4f'%FDR1)
+    # Overall accuracy
+    ACC1 = (TP1+TN1)/(TP1+FP1+FN1+TN1)
+    print('ACC:%0.4f'%ACC1)
+    
+    radiology2_path = r'.\GGO_DataSet\test_data\radiology_WSP.csv'
+    radiology2 = open(radiology2_path)
+    radiology2_List = pd.read_csv(radiology2)
+    radiology2_result = radiology2_List['Diagnosis'].tolist()
+    print('WSP:',accuracy_score(real_class,radiology2_result))
+    fpr2,tpr2,threshold2 = roc_curve(np.array(real_class),radiology2_result)
+    TN2, FP2, FN2, TP2 = confusion_matrix(real_class,radiology2_result).ravel()
+    # Sensitivity, hit rate, recall, or true positive rate
+    TPR2 = TP2/(TP2+FN2)
+    print('Sensitivity:%0.4f'%TPR2)
+    # Specificity or true negative rate
+    TNR2 = TN2/(TN2+FP2) 
+    print('Specificity:%0.4f'%TNR2)
+    # Precision or positive predictive value
+    PPV2 = TP2/(TP2+FP2)
+    print('PPV:%0.4f'%PPV2)
+    # Negative predictive value
+    NPV2 = TN2/(TN2+FN2)
+    print('NPV:%0.4f'%NPV2)
+    # Fall out or false positive rate
+    FPR2 = FP2/(FP2+TN2)
+    print('FPR:%0.4f'%FPR2)
+    # False negative rate
+    FNR2 = FN2/(TP2+FN2)
+    print('FNR:%0.4f'%FNR2)
+    # False discovery rate
+    FDR2 = FP2/(TP2+FP2) 
+    print('FDR:%0.4f'%FDR2)
+    # Overall accuracy
+    ACC2 = (TP2+TN2)/(TP2+FP2+FN2+TN2)
+    print('ACC:%0.4f'%ACC2)
+    
+    kappa = cohen_kappa_score(radiology1_result,radiology2_result)
+    print('kappa:%0.4f'%kappa)
+        
+    kappa1 = cohen_kappa_score(radiology1_result,pred_label)
+    print('kappa1:%0.4f'%kappa1)
+    
+    kappa2 = cohen_kappa_score(radiology2_result,pred_label)
+    print('kappa1:%0.4f'%kappa2)
+    
+    font = {'family' : 'Times New Roman',
+			'weight' : 'normal',
+			'size'   : 10,}
+    plt.rc('font', **font)
+
+    lw = 1
+    plt.figure(figsize=(5,5))
+    plt.plot(fpr, tpr, color='blue',
+             lw=lw, label='Our model') ###'ROC curve (area = %0.3f)' % auc
+    plt.plot(fpr2[1], tpr2[1], color='green',marker = '^',
+             lw=lw,label='Senior Radiologist') #ROC curve (area = %0.3f)' % auc1
+    plt.plot(fpr2,tpr2,color='green')
+    plt.plot([0, 1], [0, 1], color='navy', lw=1, linestyle='--')
+    
+    plt.plot(fpr1[1], tpr1[1], color='red',marker = 'o',
+             lw=lw,label='Junior Radiologist') #ROC curve (area = %0.3f)' % auc1
+    plt.plot(fpr1,tpr1,color='red')
+    
+
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.0])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+#    plt.title('Receiver operating characteristic example')
+    plt.legend(loc="lower right")
+    plt.show()
+        
+        
+        
