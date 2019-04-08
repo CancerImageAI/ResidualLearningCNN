@@ -1,2 +1,3 @@
 # ResidualLearningCNN
-A deep residual learning network for predicting lung adenocarcinoma
+A Deep Residual Learning Network for Predicting Lung Adenocarcinoma
+
