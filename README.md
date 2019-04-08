@@ -9,7 +9,7 @@ Our research investigated and developed a new <b>deep learning</b> scheme to cla
 ![image](https://github.com/GongJingUSST/ResidualLearningCNN/blob/master/Images/WorkFlow.png)
 <br>
 <div align=center>
-  **Figure 1. The flowchart of our proposed scheme.**
+  `Figure 1. The flowchart of our proposed scheme.`
 </div>
 
 
