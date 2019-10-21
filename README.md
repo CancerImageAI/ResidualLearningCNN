@@ -17,4 +17,5 @@ Our research investigated and developed a new <b>deep learning</b> scheme to cla
 
 * Authour: Jing Gong   
 * E-mail: gongjing1990@163.com
+* Citation: "A deep residual learning network for predicting lung adenocarcinoma manifesting as ground-glass nodule on CT images" (DOI: 10.1007/s00330-019-06533-w)
 
