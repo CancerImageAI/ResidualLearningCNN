@@ -77,7 +77,7 @@ def crop_roi(image, seed_pos, img_size, resize_factor):
         delta_y = y_max-y_min-64
         y_max = y_max-delta_y   
     else:
-        x_min = 0
+        y_min = 0
         y_max = 64
     
     if trans_seed[2]>32:
